@@ -8,7 +8,7 @@ import shutil
 format_tvs = "%t\\Season %s\\%t - s%se%e"
 format_mov = "%t (%y)\\%t (%y)"
 
-dir_src = "D:\\Libraries\\Downloads\\"
+dir_src = "D:\\Libraries\\Downloads"
 dir_tvs = "D:\\Libraries\\TV Shows"
 dir_mov = "D:\\Libraries\\Movies"
 
