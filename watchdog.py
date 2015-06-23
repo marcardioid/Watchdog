@@ -12,7 +12,7 @@ dir_src = "D:\\Libraries\\Downloads"
 dir_tvs = "D:\\Libraries\\TV Shows"
 dir_mov = "D:\\Libraries\\Movies"
 
-extensions = ["mkv", "avi", "mp4"]
+extensions = ["mkv", "avi", "mp4", "mov"]
 min_size = 50 # minimum size in MB
 
 cleanup = True
