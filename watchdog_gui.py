@@ -17,7 +17,9 @@ class Worker(threading.Thread):
         self.stopnow = False
 
     def run(self):
-        path_to_watch = "D:\Libraries\Downloads" # curdir
+        with open("config.ini") as file:
+            directories = file.read().splitlines()
+            path_to_watch = directories[0]
         print("Started watching '%s' at '%s'." % ("".join(path_to_watch), time.asctime()))
 
         change_handle = win32file.FindFirstChangeNotification(
@@ -39,7 +41,7 @@ class Worker(threading.Thread):
               win32file.FindNextChangeNotification(change_handle)
         finally:
           win32file.FindCloseChangeNotification(change_handle)
-          print("Stopped watching '%s' at '%s'." % ("".join (path_to_watch), time.asctime ()))
+          print("Stopped watching '%s' at '%s'." % ("".join (path_to_watch), time.asctime()))
 
     def stop(self):
         self.stopnow = True

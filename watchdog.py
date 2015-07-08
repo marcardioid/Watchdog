@@ -8,9 +8,9 @@ import shutil
 format_tvs = "%t\\Season %s\\%t - s%se%e"
 format_mov = "%t (%y)\\%t (%y)"
 
-dir_src = "D:\\Libraries\\Downloads"
-dir_tvs = "D:\\Libraries\\TV Shows"
-dir_mov = "D:\\Libraries\\Movies"
+dir_src = "D:\\Libraries\\Downloads\\MC_INPUT"
+dir_tvs = "D:\\Libraries\\Downloads\\MC_OUTPUT\\TV Shows"
+dir_mov = "D:\\Libraries\\Downloads\\MC_OUTPUT\\Movies"
 
 extensions = ["mkv", "avi", "mp4", "mov"]
 min_size = 50 # minimum size in MB
