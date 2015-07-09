@@ -1,10 +1,12 @@
+#!/usr/bin/python
+
 import sys
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QDir, QFile
 from PyQt5.QtWidgets import (QAction, QApplication, QComboBox,
         QDialog, QGridLayout, QHBoxLayout, QLabel, QMessageBox,
         QMenu, QPushButton, QSystemTrayIcon, QSizePolicy, QFileDialog)
-from watchdog_gui import Worker
+from scanner import Scanner
 import atexit
 
 class Window(QDialog):
@@ -53,7 +55,7 @@ class Window(QDialog):
         self.setFixedSize(700, 150)
 
         # Start the Worker
-        self.bgp = Worker()
+        self.bgp = Scanner(True)
         self.bgp.setDaemon(True)
         self.bgp.start()
 
@@ -138,7 +140,7 @@ class Window(QDialog):
         outputDirMOV = self.outputDirMOVComboBox.currentText()
         with open("config.ini", "w") as file:
             file.write(inputDir + "\n" + outputDirTVS + "\n" + outputDirMOV)
-        self.bgp = Worker()
+        self.bgp = Scanner(True)
         self.bgp.setDaemon(True)
         self.bgp.start()
         # print("SAVED CONFIG")
@@ -160,7 +162,7 @@ class Window(QDialog):
         self.bgp.stop()
         self.bgp.join()
 
-def exit_handler():
+def exitHandler():
     window.stop()
 
 if __name__ == '__main__':
@@ -177,5 +179,5 @@ if __name__ == '__main__':
     window.show()
     window.load()
 
-    atexit.register(exit_handler)
+    atexit.register(exitHandler)
     sys.exit(app.exec_())
