@@ -3,13 +3,13 @@
 import sys
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QDir, QFile
-from PyQt5.QtWidgets import (QAction, QApplication, QComboBox,
+from PyQt5.QtWidgets import (QWidget, QAction, QApplication, QComboBox,
         QDialog, QGridLayout, QHBoxLayout, QLabel, QMessageBox,
         QMenu, QPushButton, QSystemTrayIcon, QSizePolicy, QFileDialog)
 from scanner import Scanner
 import atexit
 
-class Window(QDialog):
+class Window(QWidget):
     def __init__(self):
         super(Window, self).__init__()
 
@@ -28,6 +28,9 @@ class Window(QDialog):
         self.saveButton = self.createButton("&Save", self.save)
         self.exceptionsButton = self.createButton("&Manage Exeptions", self.manageExceptions)
 
+        self.watching = False
+        self.toggleButton = self.createButton("&Start Watching", self.toggle)
+
         # HANDLERS
         self.trayIcon.activated.connect(self.iconActivated)
 
@@ -35,6 +38,7 @@ class Window(QDialog):
         buttonsLayout = QHBoxLayout()
         buttonsLayout.addStretch()
         buttonsLayout.addWidget(self.exceptionsButton)
+        buttonsLayout.addWidget(self.toggleButton)
         buttonsLayout.addWidget(self.saveButton)
 
         mainLayout = QGridLayout()
@@ -51,13 +55,11 @@ class Window(QDialog):
         self.setLayout(mainLayout)
 
         self.setIcon('watchdog.ico')
-        self.setWindowTitle("Watchdog")
+        self.setWindowTitle("Watchdog - Finds, renames and moves your media files.")
         self.setFixedSize(700, 150)
 
         # Start the Worker
-        self.bgp = Scanner(True)
-        self.bgp.setDaemon(True)
-        self.bgp.start()
+        self.scanner = Scanner(True)
 
     def setVisible(self, visible):
         self.minimizeAction.setEnabled(visible)
@@ -108,6 +110,7 @@ class Window(QDialog):
         self.minimizeAction = QAction("Mi&nimize", self, triggered=self.hide)
         self.restoreAction = QAction("&Restore", self,
                 triggered=self.showNormal)
+        self.toggleAction = QAction("&Toggle", self, triggered=self.toggle)
         self.quitAction = QAction("&Quit", self,
                 triggered=QApplication.instance().quit)
 
@@ -115,6 +118,7 @@ class Window(QDialog):
          self.trayIconMenu = QMenu(self)
          self.trayIconMenu.addAction(self.minimizeAction)
          self.trayIconMenu.addAction(self.restoreAction)
+         self.trayIconMenu.addAction(self.toggleAction)
          self.trayIconMenu.addSeparator()
          self.trayIconMenu.addAction(self.quitAction)
 
@@ -133,17 +137,16 @@ class Window(QDialog):
         webbrowser.open("exceptions.ini")
 
     def save(self):
-        self.bgp.stop()
-        self.bgp.join()
+        self.scanner.stop()
+        self.scanner.join()
         inputDir = self.inputDirComboBox.currentText()
         outputDirTVS = self.outputDirTVSComboBox.currentText()
         outputDirMOV = self.outputDirMOVComboBox.currentText()
         with open("config.ini", "w") as file:
             file.write(inputDir + "\n" + outputDirTVS + "\n" + outputDirMOV)
-        self.bgp = Scanner(True)
-        self.bgp.setDaemon(True)
-        self.bgp.start()
-        # print("SAVED CONFIG")
+        self.scanner = Scanner(True)
+        self.scanner.setDaemon(True)
+        self.scanner.start()
 
     def load(self):
         with open("config.ini") as file:
@@ -154,13 +157,24 @@ class Window(QDialog):
                 if comboboxes[i].findText(directory) == -1:
                     comboboxes[i].addItem(directory)
                 comboboxes[i].setCurrentIndex(comboboxes[i].findText(directory))
-            # print("LOADED CONFIG")
         else:
-            print("COULD NOT LOAD CONFIG")
+            pass
+
+    def toggle(self):
+        if not self.watching:
+            self.scanner.setDaemon(True)
+            self.scanner.start()
+        else:
+            self.scanner.stop()
+            self.scanner.join()
+            self.scanner = Scanner(True)
+        self.watching = not self.watching
+        self.toggleButton.setText("Stop Watching" if self.watching else "Start Watching")
 
     def stop(self):
-        self.bgp.stop()
-        self.bgp.join()
+        if self.scanner.isAlive():
+            self.scanner.stop()
+            self.scanner.join()
 
 def exitHandler():
     window.stop()
