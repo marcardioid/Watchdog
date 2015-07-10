@@ -1,16 +1,23 @@
 # Watchdog
-Python script that finds any media files in a directory.<br>
+Python app that watches a directory and finds any media files in it.<br>
 Automatically tags, renames (formats) and moves these files to your media server directory.<br>
 Supports movie and tv show files and automatically recognises if a media file is a movie or an episode.<br>
 Properly handles any mainstream scene file names, including multi-episodes.
 
-###Usage  
-Manually run from the command line:
+###Usage
+Run:
 
     watchdog.py
+    
+(I'm working on getting a '.exe' dist out soon.)<br>
+Locate your source and destination directories through the GUI and add any renaming exception rules.<br>
+Press 'Start'.
 
-You could also set up a task scheduler.<br>
-Alternatively, you could download and run the system tray app (beta branch) to continuously and automatically 'watch' a directory for changes.<br>
+Or, manually run from the command line:
+
+    renamer.py
+
+It then loads your directories from the 'config.ini' file.
 
 ###Requirements
-The script works on all platforms, but the GUI in the beta branch is Windows only for now.
+PyQt5
