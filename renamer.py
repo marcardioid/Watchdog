@@ -10,12 +10,11 @@ formatMOV = "%t (%y)\\%t (%y)"
 
 extensions = ["mkv", "avi", "mp4", "mov", "iso"]
 minSize = 50 # minimum size in MB
+minSize <<= 20
 
 cleanup = True
 overwrite = False
 verbose = True
-
-minSize <<= 20
 
 queueClean = set()
 queueRemove = set()
@@ -89,7 +88,7 @@ def garbagecollect():
                 print("FAILED TO REMOVE: " + dir)
 
 # Fix titlecasing in new filenames.
-def to_titlecase(filename):
+def toTitlecase(filename):
     smaller = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'if', 'in', 'of', 'on', 'or', 'the', 'to', 'v', 'via', 'vs', 'with']
     filename = filename.split(" ")
     result = ""
@@ -113,7 +112,7 @@ def formatter(filename_old):
         return (None, None)
     tv = re.findall(pattern_tv, filename_old)
     if tv:
-        name = to_titlecase(tv[0][0].replace(".", " "))
+        name = toTitlecase(tv[0][0].replace(".", " "))
         if name in specialShows:
             name = specialShows[name]
         season = tv[0][1].zfill(2)
@@ -130,7 +129,7 @@ def formatter(filename_old):
     else:
         tv_alt = re.findall(pattern_tv_alt, filename_old)
         if tv_alt:
-            name = to_titlecase(tv_alt[0][0].replace(".", " "))
+            name = toTitlecase(tv_alt[0][0].replace(".", " "))
             if name in specialShows:
                 name = specialShows[name]
             season = tv_alt[0][1].zfill(2)
@@ -145,7 +144,7 @@ def formatter(filename_old):
         else:
             movie = re.findall(pattern_movie, filename_old)
             if movie:
-                name = to_titlecase(movie[0][0].replace(".", " "))
+                name = toTitlecase(movie[0][0].replace(".", " "))
                 year = movie[0][1]
                 quality = movie[0][2] if movie[0][2] else "notHD"
                 filename_new = formatMOV.replace("%t", name)

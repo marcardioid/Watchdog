@@ -30,16 +30,16 @@ class Scanner(threading.Thread):
 
         # then loop
         try:
-          while 1 and not self.stopNow:
-            result = win32event.WaitForSingleObject(change_handle, 500)
-            if result == win32con.WAIT_OBJECT_0:
-              time.sleep(1)
-              main(dir_src, dir_tvs, dir_mov)
-              win32file.FindNextChangeNotification(change_handle)
+            while True and not self.stopNow:
+                result = win32event.WaitForSingleObject(change_handle, 500)
+                if result == win32con.WAIT_OBJECT_0:
+                    time.sleep(1)
+                    main(dir_src, dir_tvs, dir_mov)
+                    win32file.FindNextChangeNotification(change_handle)
         finally:
-          win32file.FindCloseChangeNotification(change_handle)
-          if self.verbose:
-            print("Stopped watching '%s' at '%s'." % ("".join (dir_src), time.asctime()))
+            win32file.FindCloseChangeNotification(change_handle)
+            if self.verbose:
+                print("Stopped watching '%s' at '%s'." % ("".join (dir_src), time.asctime()))
 
     def stop(self):
         self.stopNow = True
