@@ -9,11 +9,12 @@ Run:
 
     watchdog.py
     
-(I'm working on getting a '.exe' dist out soon.)<br>
 Locate your source and destination directories through the GUI and add any renaming exception rules.<br>
 Press 'Start'.
 
-Or, manually run from the command line:
+Or, download the [latest release] (http://marcsleegers.com/files/watchdog_BB-r09b.zip) and run the *.exe*.
+
+Or, manually run the renaming module from the command line:
 
     renamer.py
 
