@@ -241,9 +241,9 @@ class Window(QWidget):
 
 def exitHandler():
     window.stop()
-    window.save()
+    # window.save()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     if not QSystemTrayIcon.isSystemTrayAvailable():
