@@ -15,9 +15,10 @@ class Window(QWidget):
         super(Window, self).__init__()
 
         # GUI
-        self.createActions()
-        self.createTrayIcon()
-        self.trayIcon.activated.connect(self.iconActivated)
+        if isSystemTrayAvailable:
+            self.createActions()
+            self.createTrayIcon()
+            self.trayIcon.activated.connect(self.iconActivated)
 
         self.inputDirLabel = QLabel("Input Directory:")
         self.outputDirTVSLabel = QLabel("Output Directory (Shows):")
@@ -95,30 +96,29 @@ class Window(QWidget):
     def closeEvent(self, event):
         self.trayIcon.show()
         if self.trayIcon.isVisible():
-            self.showMessage()
+            self.showMessage("App is still running in your system tray.")
             self.hide()
             event.ignore()
 
     def setIcon(self, filename):
         icon = QIcon(filename)
-        self.trayIcon.setIcon(icon)
         self.setWindowIcon(icon)
-        self.trayIcon.setToolTip("Watchdog")
+        if isSystemTrayAvailable:
+            self.trayIcon.setIcon(icon)
+            self.trayIcon.setToolTip("Watchdog")
 
     def iconActivated(self, reason):
         if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
             self.showNormal()
-        elif reason == QSystemTrayIcon.MiddleClick:
-            self.showMessage()
 
-    def showMessage(self):
-        if self.trayIcon.isVisible():
-            self.trayIcon.showMessage("Still running!",
-                    "Watchdog is still running in your system tray.",
+    def showMessage(self, message):
+        if isSystemTrayAvailable and self.trayIcon.isVisible():
+            self.trayIcon.showMessage("Watchdog",
+                    message,
                     QSystemTrayIcon.MessageIcon(QSystemTrayIcon.Information),
                     10 * 1000)
         else:
-            QMessageBox.information(self, "Watchdog", "SAVED") # TODO: ADD MSG PARAMETER
+            QMessageBox.information(self, "Watchdog", message)
 
     def createComboBox(self):
         comboBox = QComboBox()
@@ -192,7 +192,7 @@ class Window(QWidget):
             for ex in exceptions:
                 if len(ex) > 1:
                     file.write(ex.rstrip() + '\n')
-        self.showMessage()
+        self.showMessage("Saved configuration.")
         self.scanner = Scanner(True)
 
     def createTable(self):
@@ -241,17 +241,12 @@ class Window(QWidget):
 
 def exitHandler():
     window.stop()
-    # window.save()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    if not QSystemTrayIcon.isSystemTrayAvailable():
-        QMessageBox.critical(None, "Watchdog",
-                "Couldn't detect system tray on this system.\nExiting...")
-        sys.exit(1) # TODO: Just disable tray functionality
-
-    QApplication.setQuitOnLastWindowClosed(False)
+    isSystemTrayAvailable = QSystemTrayIcon.isSystemTrayAvailable()
+    QApplication.setQuitOnLastWindowClosed(not isSystemTrayAvailable)
 
     window = Window()
     window.show()
