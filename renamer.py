@@ -3,6 +3,7 @@
 import os
 import re
 import shutil
+import utils
 
 # CONFIGURATION START
 formatTVS = "%t\\Season %s\\%t - s%se%e"
@@ -53,17 +54,11 @@ pattern_movie = re.compile(r"""(.*?)      # Title
 
 # Load exceptions
 def loadExceptions():
-    with open("exceptions.ini", "r") as file:
-        lines = file.read().splitlines()
-    for line in lines:
-        if len(line) > 1 and line[0] != "#":
-            if re.match(r".*;.*", line):
-                exception = re.match(r"(.*);(.*)", line)
-                specialShows[exception.group(1)] = exception.group(2)
+    specialShows.clear()
+    specialShows.update(utils.loadExceptions())
 
 def loadConfig():
-    with open("config.ini") as file:
-        directories = file.read().splitlines()
+    directories = utils.loadConfig()
     return (os.path.normpath(directories[0]), os.path.normpath(directories[1]), os.path.normpath(directories[2]))
 
 # Clean the source dir. Remove empty folders, small files etc.

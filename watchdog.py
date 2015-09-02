@@ -4,6 +4,7 @@ import sys
 import atexit
 import re
 from scanner import Scanner
+import utils
 from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
 from PyQt5.QtCore import QDir, QModelIndex
 from PyQt5.QtWidgets import (QWidget, QAction, QApplication, QComboBox,
@@ -32,7 +33,7 @@ class Window(QWidget):
 
         self.sourceGroupBox = QGroupBox("Manage Exceptions")
         self.model = QStandardItemModel(0, 3)
-        self.model.setHorizontalHeaderLabels(["OLD", "NEW", "MANAGE"])
+        self.model.setHorizontalHeaderLabels(["OLD NAME", "NEW NAME", "MANAGE"])
         self.list = QTableView()
         self.list.setModel(self.model)
         self.list.setAlternatingRowColors(True)
@@ -47,7 +48,7 @@ class Window(QWidget):
         self.saveButton = self.createButton("&Save", self.save)
         self.busyBar = QProgressBar()
         self.busyBar.setRange(0, 0)
-        self.busyBar.setToolTip("Watching directory for new files...")
+        self.busyBar.setToolTip("Watching for new files...")
         self.busyBar.hide()
 
         sourceLayout = QGridLayout()
@@ -196,20 +197,17 @@ class Window(QWidget):
         self.scanner = Scanner(True)
 
     def createTable(self):
-        with open("exceptions.ini", "r") as file:
-            lines = file.read().splitlines()
-        for i, line in enumerate(lines[2:]):
-            if len(line) > 1 and line[0] != "#":
-                if re.match(r".*;.*", line):
-                    exception = re.match(r"(.*);(.*)", line)
-                    itemOld = QStandardItem(exception.group(1))
-                    itemNew = QStandardItem(exception.group(2))
-                    self.model.appendRow([itemOld, itemNew])
-                    self.insertWidget(i, itemOld)
+        exceptions = utils.loadExceptions()
+        i = 0
+        for k, v in exceptions.items():
+            itemOld = QStandardItem(k)
+            itemNew = QStandardItem(v)
+            self.model.appendRow([itemOld, itemNew])
+            self.insertWidget(i, itemOld)
+            i += 1
 
     def load(self):
-        with open("config.ini") as file:
-            directories = file.read().splitlines()
+        directories = utils.loadConfig()
         comboboxes = [self.inputDirComboBox, self.outputDirTVSComboBox, self.outputDirMOVComboBox]
         if len(directories) == 3:
             for i, directory in enumerate(directories):

@@ -5,6 +5,7 @@ import threading
 import time
 import os
 from renamer import main
+import utils
 
 class Scanner(threading.Thread):
     def __init__(self, verbose=False):
@@ -13,8 +14,7 @@ class Scanner(threading.Thread):
         self.verbose = verbose
 
     def run(self):
-        with open("config.ini") as file:
-            directories = file.read().splitlines()
+        directories = utils.loadConfig()
         dir_src, dir_tvs, dir_mov = os.path.normpath(directories[0]), os.path.normpath(directories[1]), os.path.normpath(directories[2])
         if self.verbose:
             print("Started watching '%s' at '%s'." % ("".join(dir_src), time.asctime()))
