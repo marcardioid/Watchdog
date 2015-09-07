@@ -74,9 +74,10 @@ def garbagecollect():
                 queueRemove.add(dir)
     for dir in queueRemove:
         try:
-            shutil.rmtree(dir)
-            if verbose:
-                print("REMOVED: " + dir)
+            if os.path.exists(dir):
+                shutil.rmtree(dir)
+                if verbose:
+                    print("REMOVED: " + dir)
         except Exception as e:
             if verbose:
                 print(e)
@@ -92,6 +93,8 @@ def toTitlecase(filename):
     if len(filename) > 1:
         result += " "
         for word in filename[1:]:
+            if not word:
+                continue
             if word in smaller:
                 result += word.lower()
             else:
