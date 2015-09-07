@@ -2,7 +2,6 @@
 
 import sys
 import atexit
-import re
 from scanner import Scanner
 import utils
 from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
@@ -12,8 +11,10 @@ from PyQt5.QtWidgets import (QWidget, QAction, QApplication, QComboBox,
         QSystemTrayIcon, QSizePolicy, QFileDialog, QGroupBox, QTableView, QProgressBar)
 
 class Window(QWidget):
-    def __init__(self):
+    def __init__(self, verbose=False):
         super(Window, self).__init__()
+
+        self.verbose = verbose
 
         # GUI
         if isSystemTrayAvailable:
@@ -83,7 +84,7 @@ class Window(QWidget):
 
         # Start the Worker
         self.watching = False
-        self.scanner = Scanner(True)
+        self.scanner = Scanner(self.verbose)
 
     def setVisible(self, visible):
         if isSystemTrayAvailable:
@@ -160,7 +161,6 @@ class Window(QWidget):
         self.insertWidget(itemindex, item)
 
     def deleteRow(self, n):
-        print("DELETING " + str(n))
         self.model.removeRow(n)
 
     def insertWidget(self, n, item):
@@ -182,21 +182,19 @@ class Window(QWidget):
         inputDir = self.inputDirComboBox.currentText()
         outputDirTVS = self.outputDirTVSComboBox.currentText()
         outputDirMOV = self.outputDirMOVComboBox.currentText()
-        with open("config.ini", "w") as file:
+        with open("config/config.ini", "w") as file:
             file.write(inputDir + "\n" + outputDirTVS + "\n" + outputDirMOV)
         exceptions = []
-        with open("exceptions.ini", "r") as file:
-            exceptions += file.readlines()[:2]
         for i in range(self.model.rowCount()):
             itemOld = self.model.item(i, 0)
             itemNew = self.model.item(i ,1)
-            exceptions.append(itemOld.text() + ";" + itemNew.text())
-        with open("exceptions.ini", "w") as file:
-            for ex in exceptions:
-                if len(ex) > 1:
-                    file.write(ex.rstrip() + '\n')
+            exceptions.append(itemOld.text() + ';' + itemNew.text())
+        with open("config/exceptions.ini", "w") as file:
+            for exception in exceptions:
+                if len(exception) > 1:
+                    file.write(exception.rstrip() + '\n')
         self.showMessage("Saved configuration.")
-        self.scanner = Scanner(True)
+        self.scanner = Scanner(self.verbose)
 
     def createTable(self):
         exceptions = utils.loadExceptions()
@@ -226,10 +224,8 @@ class Window(QWidget):
             self.scanner.start()
             self.busyBar.show()
         else:
-            if self.scanner.isAlive():
-                self.scanner.stop()
-                self.scanner.join()
-            self.scanner = Scanner(True)
+            self.stop()
+            self.scanner = Scanner(self.verbose)
             self.busyBar.hide()
         self.watching = not self.watching
         self.toggleButton.setText("Stop Watching" if self.watching else "Start Watching")
@@ -248,7 +244,7 @@ if __name__ == "__main__":
     isSystemTrayAvailable = QSystemTrayIcon.isSystemTrayAvailable()
     app.setQuitOnLastWindowClosed(not isSystemTrayAvailable)
 
-    window = Window()
+    window = Window(True)
     window.show()
     window.load()
 

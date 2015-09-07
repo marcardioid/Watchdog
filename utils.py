@@ -3,18 +3,17 @@
 import re
 
 def loadConfig():
-    with open("config.ini") as file:
+    with open("config/config.ini") as file:
         directories = file.read().splitlines()
     return directories
 
 def loadExceptions():
-    with open("exceptions.ini", "r") as file:
+    with open("config/exceptions.ini", "r") as file:
         lines = file.read().splitlines()
-    exceptions = {}
+    exceptions = dict()
     for line in lines:
-        if len(line) > 1 and line[0] != "#":
-            if re.match(r".*;.*", line):
-                exception = re.match(r"(.*);(.*)", line)
-                if exception:
-                    exceptions[exception.group(1)] = exception.group(2)
+        if not line.startswith('#'):
+            exception = re.match(r"(.*);(.*)", line)
+            if exception:
+                exceptions[exception.group(1)] = exception.group(2)
     return exceptions
