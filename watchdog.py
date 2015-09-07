@@ -86,8 +86,9 @@ class Window(QWidget):
         self.scanner = Scanner(True)
 
     def setVisible(self, visible):
-        self.minimizeAction.setEnabled(visible)
-        self.restoreAction.setEnabled(self.isMaximized() or not visible)
+        if isSystemTrayAvailable:
+            self.minimizeAction.setEnabled(visible)
+            self.restoreAction.setEnabled(self.isMaximized() or not visible)
         super(Window, self).setVisible(visible)
 
     def showNormal(self):
@@ -95,11 +96,12 @@ class Window(QWidget):
         super(Window, self).showNormal()
 
     def closeEvent(self, event):
-        self.trayIcon.show()
-        if self.trayIcon.isVisible():
-            self.showMessage("App is still running in your system tray.")
-            self.hide()
-            event.ignore()
+        if isSystemTrayAvailable:
+            self.trayIcon.show()
+            if self.trayIcon.isVisible():
+                self.showMessage("App is still running in your system tray.")
+                self.hide()
+                event.ignore()
 
     def setIcon(self, filename):
         icon = QIcon(filename)
@@ -244,7 +246,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     isSystemTrayAvailable = QSystemTrayIcon.isSystemTrayAvailable()
-    QApplication.setQuitOnLastWindowClosed(not isSystemTrayAvailable)
+    app.setQuitOnLastWindowClosed(not isSystemTrayAvailable)
 
     window = Window()
     window.show()
