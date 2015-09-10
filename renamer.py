@@ -68,7 +68,7 @@ def garbagecollect():
             delete = True
             for root, dirs, files in os.walk(dir):
                 for f in files:
-                    if f[f.rfind(".")+1:] in extensions and os.path.getsize(os.path.join(root, f)) >= minSize:
+                    if (f[f.rfind(".")+1:] in extensions and os.path.getsize(os.path.join(root, f)) >= minSize) or f[f.rfind(".")+1:] == "srt":
                         delete = False
             if delete:
                 queueRemove.add(dir)
@@ -106,7 +106,7 @@ def toTitlecase(filename):
 # Translate the old filename to the new format.
 def formatter(filename_old):
     extension = filename_old[filename_old.rfind(".")+1:]
-    if extension not in extensions:
+    if extension not in extensions and extension != "srt":
         return (None, None)
     tv = re.findall(pattern_tv, filename_old)
     if tv:
@@ -179,7 +179,7 @@ def main(dir_src, dir_tvs, dir_mov):
         for filename_old in files:
             try:
                 path_old = os.path.join(root, filename_old)
-                if os.path.getsize(path_old) >= minSize:
+                if os.path.getsize(path_old) >= minSize or filename_old[filename_old.rfind(".")+1:] == "srt":
                     (filename_new, type) = formatter(filename_old)
                     if type:
                         if root != dir_src:
