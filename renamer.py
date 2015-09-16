@@ -16,6 +16,7 @@ minSize <<= 20
 cleanup = True
 overwrite = False
 verbose = True
+debug = False
 
 queueClean = set()
 queueRemove = set()
@@ -182,13 +183,16 @@ def main(dir_src, dir_tvs, dir_mov):
                 if os.path.getsize(path_old) >= minSize or filename_old[filename_old.rfind(".")+1:] == "srt":
                     (filename_new, type) = formatter(filename_old)
                     if type:
-                        if root != dir_src:
+                        if root != dir_src and not debug:
                             queueClean.add(root)
                         if type == "TV":
                             path_new = os.path.join(dir_tvs, filename_new)
                         else:
                             path_new = os.path.join(dir_mov, filename_new)
-                        relocate(path_old, path_new)
+                        if not debug:
+                            relocate(path_old, path_new)
+                        else:
+                            print("{}\t->\t{}".format(filename_old, filename_new))
             except WindowsError as e:
                 if verbose:
                     print(e)
@@ -196,7 +200,7 @@ def main(dir_src, dir_tvs, dir_mov):
                 if verbose:
                     print("FAILED: " + str(filename_old))
                     print(e)
-    if cleanup:
+    if cleanup and not debug:
         garbagecollect()
 
 if __name__ == "__main__":
