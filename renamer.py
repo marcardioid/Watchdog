@@ -16,11 +16,11 @@ minSize <<= 20
 cleanup = True
 overwrite = False
 verbose = True
-debug = False
+debug = True
 
 queueClean = set()
 queueRemove = set()
-specialShows = {}
+specialShows = dict()
 # CONFIGURATION END
 
 # TV pattern.
@@ -69,7 +69,7 @@ def garbagecollect():
             delete = True
             for root, dirs, files in os.walk(dir):
                 for f in files:
-                    if (f[f.rfind(".")+1:] in extensions and os.path.getsize(os.path.join(root, f)) >= minSize) or f[f.rfind(".")+1:] == "srt":
+                    if (f[f.rfind('.')+1:] in extensions and os.path.getsize(os.path.join(root, f)) >= minSize) or f[f.rfind('.')+1:] == "srt":
                         delete = False
             if delete:
                 queueRemove.add(dir)
@@ -78,40 +78,41 @@ def garbagecollect():
             if os.path.exists(dir):
                 shutil.rmtree(dir)
                 if verbose:
-                    print("REMOVED: " + dir)
+                    print("REMOVED: {}".format(dir))
         except Exception as e:
             if verbose:
                 print(e)
-                print("FAILED TO REMOVE: " + dir)
+                print("FAILED TO REMOVE: {}".format(dir))
 
 # Fix titlecasing in new filenames.
 def toTitlecase(filename):
     smaller = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'if', 'in', 'of', 'on', 'or', 'the', 'to', 'v', 'via', 'vs', 'with']
-    filename = filename.split(" ")
-    result = ""
-    result += filename[0][0].upper()
-    result += filename[0][1:].lower()
-    if len(filename) > 1:
-        result += " "
-        for word in filename[1:]:
-            if not word:
+    words = filename.split(' ')
+    result = words[0][0].upper() + words[0][1:].lower()
+    if len(words) > 1:
+        result += ' '
+        for word in words[1:]:
+            if len(word) == 0:
                 continue
-            if word in smaller:
-                result += word.lower()
-            else:
-                result += word[0].upper()
-                result += word[1:].lower()
-            result += " "
+            result += word.lower() if word.lower() in smaller else word[0].upper() + word[1:].lower()
+            result += ' '
     return result.strip()
+
+# Fills in the 'blanks' of a given format given a translation dictionary
+def rename(format, translations):
+    result = format
+    for k, v in translations.items():
+        result = result.replace(k, v)
+    return result
 
 # Translate the old filename to the new format.
 def formatter(filename_old):
-    extension = filename_old[filename_old.rfind(".")+1:]
+    extension = filename_old[filename_old.rfind('.')+1:]
     if extension not in extensions and extension != "srt":
         return (None, None)
     tv = re.findall(pattern_tv, filename_old)
     if tv:
-        name = toTitlecase(tv[0][0].replace(".", " "))
+        name = toTitlecase(tv[0][0].replace('.', ' '))
         if name in specialShows:
             name = specialShows[name]
         season = tv[0][1].zfill(2)
@@ -119,41 +120,33 @@ def formatter(filename_old):
         if tv[0][3]:
             episode += "e" + tv[0][3].zfill(2)
         quality = tv[0][4] if tv[0][4] else "notHD"
-        filename_new = formatTVS.replace("%t", name)
-        filename_new = filename_new.replace("%s", season)
-        filename_new = filename_new.replace("%e", episode)
-        filename_new = filename_new.replace("%q", quality)
-        filename_new += "." + extension
+        filename_new = rename(formatTVS, {"%t": name, "%s": season, "%e": episode, "%q": quality})
+        filename_new += '.' + extension
         return (filename_new, "TV")
     else:
         tv_alt = re.findall(pattern_tv_alt, filename_old)
         if tv_alt:
-            name = toTitlecase(tv_alt[0][0].replace(".", " "))
+            name = toTitlecase(tv_alt[0][0].replace('.', ' '))
             if name in specialShows:
                 name = specialShows[name]
             season = tv_alt[0][1].zfill(2)
             episode = tv_alt[0][2].zfill(2)
             quality = tv_alt[0][3] if tv_alt[0][3] else "notHD"
-            filename_new = formatTVS.replace("%t", name)
-            filename_new = filename_new.replace("%s", season)
-            filename_new = filename_new.replace("%e", episode)
-            filename_new = filename_new.replace("%q", quality)
-            filename_new += "." + extension
+            filename_new = rename(formatTVS, {"%t": name, "%s": season, "%e": episode, "%q": quality})
+            filename_new += '.' + extension
             return (filename_new, "TV")
         else:
             movie = re.findall(pattern_movie, filename_old)
             if movie:
-                name = toTitlecase(movie[0][0].replace(".", " "))
+                name = toTitlecase(movie[0][0].replace('.', ' '))
                 year = movie[0][1]
                 quality = movie[0][2] if movie[0][2] else "notHD"
-                filename_new = formatMOV.replace("%t", name)
-                filename_new = filename_new.replace("%y", year)
-                filename_new = filename_new.replace("%q", quality)
-                filename_new += "." + extension
+                filename_new = rename(formatMOV, {"%t": name, "%y": year, "%q": quality})
+                filename_new += '.' + extension
                 return (filename_new, "MOVIE")
             else:
                 if verbose:
-                    print("ERROR: %s" % filename_old)
+                    print("ERROR: {}".format(filename_old))
                 return (filename_old, None)
 
 # Move the formatted file.
@@ -163,16 +156,16 @@ def relocate(old, new):
             os.remove(new)
             shutil.move(old, new)
             if verbose:
-                print("OVERWROTE: " + str(new))
+                print("OVERWROTE: {}".format(new))
         else:
             if verbose:
-                print("ALREADY EXISTS: " + str(new))
+                print("ALREADY EXISTS: {}".format(new))
     else:
         if not os.path.exists(os.path.dirname(new)):
             os.makedirs(os.path.dirname(new))
         shutil.move(old, new)
         if verbose:
-            print("MOVED: " +str(new))
+            print("MOVED: {}".format(new))
 
 def main(dir_src, dir_tvs, dir_mov):
     loadExceptions()
@@ -180,7 +173,7 @@ def main(dir_src, dir_tvs, dir_mov):
         for filename_old in files:
             try:
                 path_old = os.path.join(root, filename_old)
-                if os.path.getsize(path_old) >= minSize or filename_old[filename_old.rfind(".")+1:] == "srt":
+                if os.path.getsize(path_old) >= minSize or filename_old[filename_old.rfind('.')+1:] == "srt":
                     (filename_new, type) = formatter(filename_old)
                     if type:
                         if root != dir_src and not debug:
@@ -198,7 +191,7 @@ def main(dir_src, dir_tvs, dir_mov):
                     print(e)
             except Exception as e:
                 if verbose:
-                    print("FAILED: " + str(filename_old))
+                    print("FAILED: {}".format(filename_old))
                     print(e)
     if cleanup and not debug:
         garbagecollect()
