@@ -16,7 +16,7 @@ minSize <<= 20
 cleanup = True
 overwrite = False
 verbose = True
-debug = True
+debug = False
 
 queueClean = set()
 queueRemove = set()
