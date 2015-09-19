@@ -17,7 +17,7 @@ class Scanner(threading.Thread):
         directories = utils.loadConfig()
         dir_src, dir_tvs, dir_mov = os.path.normpath(directories[0]), os.path.normpath(directories[1]), os.path.normpath(directories[2])
         if self.verbose:
-            print("Started watching '%s' at '%s'." % ("".join(dir_src), time.asctime()))
+            print("Started watching '{}' at '{}'.".format(str(dir_src), time.asctime()))
 
         change_handle = win32file.FindFirstChangeNotification(
           dir_src,
@@ -39,7 +39,7 @@ class Scanner(threading.Thread):
         finally:
             win32file.FindCloseChangeNotification(change_handle)
             if self.verbose:
-                print("Stopped watching '%s' at '%s'." % ("".join (dir_src), time.asctime()))
+                print("Stopped watching '{}' at '{}'.".format(str(dir_src), time.asctime()))
 
     def stop(self):
         self.abort = True
