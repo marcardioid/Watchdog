@@ -48,6 +48,7 @@ class Window(QWidget):
         self.toggleButton.setFixedSize(100, 23)
         self.saveButton = self.createButton("&Save", self.save)
         self.busyBar = QProgressBar()
+        self.busyBar.setFixedSize(465, 21) # TODO: proper interface scaling
         self.busyBar.setRange(0, 0)
         self.busyBar.setToolTip("Watching for new files...")
         self.busyBar.hide()
