@@ -188,6 +188,7 @@ def main(dir_src, dir_tvs, dir_mov):
                             print("{}\t->\t{}".format(filename_old, filename_new))
             except WindowsError as e:
                 if verbose:
+                    print("ACCESS DENIED: {}".format(filename_old))
                     print(e)
             except Exception as e:
                 if verbose:
