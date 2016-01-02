@@ -86,7 +86,7 @@ def garbagecollect():
 
 # Fix titlecasing in new filenames.
 def toTitlecase(filename):
-    smaller = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'if', 'in', 'of', 'on', 'or', 'the', 'to', 'v', 'via', 'vs', 'with']
+    smaller = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'if', 'in', 'of', 'on', 'or', 'the', 'to', 'v', 'via', 'vs', 'vs.', 'with']
     words = filename.split(' ')
     result = words[0][0].upper() + words[0][1:].lower()
     if len(words) > 1:
