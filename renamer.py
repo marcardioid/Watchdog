@@ -8,6 +8,7 @@ import utils
 # CONFIGURATION START
 formatTVS = "%t\\Season %s\\%t - s%se%e"
 formatMOV = "%t (%y)\\%t (%y)"
+mediacenter = "Plex"
 
 extensions = ["mkv", "avi", "mp4", "mov", "iso"]
 minSize = 50 # minimum size in MB
@@ -22,6 +23,10 @@ queueClean = set()
 queueRemove = set()
 specialShows = dict()
 # CONFIGURATION END
+
+if mediacenter == "Plex":
+    from plexapi.server import PlexServer
+    plex = PlexServer()
 
 # TV pattern.
 pattern_tv = re.compile(r"""(.*?)         # Title
@@ -204,6 +209,8 @@ def main(dir_src, dir_tvs, dir_mov):
                     print(e)
     if cleanup and not debug:
         garbagecollect()
+    if plex:
+        plex.library.refresh()
 
 
 if __name__ == "__main__":
