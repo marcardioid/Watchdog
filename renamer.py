@@ -67,7 +67,7 @@ def loadExceptions():
 
 def loadConfig():
     directories = utils.loadConfig()
-    return (os.path.normpath(directories[0]), os.path.normpath(directories[1]), os.path.normpath(directories[2]))
+    return os.path.normpath(directories[0]), os.path.normpath(directories[1]), os.path.normpath(directories[2])
 
 
 # Clean the source dir. Remove empty folders, small files etc.

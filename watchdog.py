@@ -48,8 +48,9 @@ class Window(QWidget):
         self.toggleButton = self.createButton("&Start Watching", self.toggle)
         self.toggleButton.setFixedSize(100, 23)
         self.saveButton = self.createButton("&Save", self.save)
+        self.refreshButton = self.createButton("&Refresh", self.refresh)
         self.busyBar = QProgressBar()
-        self.busyBar.setFixedSize(465, 21) # TODO: proper interface scaling
+        self.busyBar.setFixedSize(385, 21) # TODO: proper interface scaling
         self.busyBar.setRange(0, 0)
         self.busyBar.setToolTip("Watching for new files...")
         self.busyBar.hide()
@@ -65,6 +66,7 @@ class Window(QWidget):
         buttonsLayout.addWidget(self.busyBar)
         buttonsLayout.addWidget(self.toggleButton)
         buttonsLayout.addWidget(self.saveButton)
+        buttonsLayout.addWidget(self.refreshButton)
 
         mainLayout = QGridLayout()
         mainLayout.addWidget(self.inputDirLabel, 0, 0)
@@ -197,6 +199,12 @@ class Window(QWidget):
                     file.write(exception.rstrip() + '\n')
         self.showMessage("Saved configuration.")
         self.scanner = Scanner(self.verbose)
+
+    def refresh(self):
+        from plexapi.server import PlexServer
+        plex = PlexServer()
+        plex.library.refresh()
+        print("Refreshing media center...")
 
     def createTable(self):
         exceptions = utils.loadExceptions()
