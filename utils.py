@@ -2,10 +2,12 @@
 
 import re
 
+
 def loadConfig():
     with open("config/config.ini") as file:
         directories = file.read().splitlines()
     return directories
+
 
 def loadExceptions():
     with open("config/exceptions.ini", "r") as file:

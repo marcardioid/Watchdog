@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (QWidget, QAction, QApplication, QComboBox,
         QGridLayout, QHBoxLayout, QLabel, QMessageBox, QMenu, QPushButton,
         QSystemTrayIcon, QSizePolicy, QFileDialog, QGroupBox, QTableView, QProgressBar)
 
+
 class Window(QWidget):
     def __init__(self, verbose=False):
         super(Window, self).__init__()
@@ -236,8 +237,10 @@ class Window(QWidget):
             self.scanner.stop()
             self.scanner.join()
 
-def exitHandler():
+
+def exithandler():
     window.stop()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -249,5 +252,5 @@ if __name__ == "__main__":
     window.show()
     window.load()
 
-    atexit.register(exitHandler)
+    atexit.register(exithandler)
     sys.exit(app.exec_())

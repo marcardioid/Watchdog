@@ -7,6 +7,7 @@ import os
 import renamer
 import utils
 
+
 class Scanner(threading.Thread):
     def __init__(self, verbose=False):
         threading.Thread.__init__(self)

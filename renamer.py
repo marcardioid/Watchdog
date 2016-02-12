@@ -53,14 +53,17 @@ pattern_movie = re.compile(r"""(.*?)      # Title
                        (\d{3,4}p)?        # Quality
                     """, re.VERBOSE)
 
+
 # Load exceptions
 def loadExceptions():
     specialShows.clear()
     specialShows.update(utils.loadExceptions())
 
+
 def loadConfig():
     directories = utils.loadConfig()
     return (os.path.normpath(directories[0]), os.path.normpath(directories[1]), os.path.normpath(directories[2]))
+
 
 # Clean the source dir. Remove empty folders, small files etc.
 def garbagecollect():
@@ -84,6 +87,7 @@ def garbagecollect():
                 print(e)
                 print("FAILED TO REMOVE: {}".format(dir))
 
+
 # Fix titlecasing in new filenames.
 def toTitlecase(filename):
     smaller = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'if', 'in', 'of', 'on', 'or', 'the', 'to', 'v', 'via', 'vs', 'vs.', 'with']
@@ -98,12 +102,14 @@ def toTitlecase(filename):
             result += ' '
     return result.strip()
 
+
 # Fills in the 'blanks' of a given format given a translation dictionary
 def rename(format, translations):
     result = format
     for k, v in translations.items():
         result = result.replace(k, v)
     return result
+
 
 # Translate the old filename to the new format.
 def formatter(filename_old):
@@ -149,6 +155,7 @@ def formatter(filename_old):
                     print("ERROR: {}".format(filename_old))
                 return (filename_old, None)
 
+
 # Move the formatted file.
 def relocate(old, new):
     if os.path.exists(new):
@@ -166,6 +173,7 @@ def relocate(old, new):
         shutil.move(old, new)
         if verbose:
             print("MOVED: {}".format(new))
+
 
 def main(dir_src, dir_tvs, dir_mov):
     loadExceptions()
@@ -196,6 +204,7 @@ def main(dir_src, dir_tvs, dir_mov):
                     print(e)
     if cleanup and not debug:
         garbagecollect()
+
 
 if __name__ == "__main__":
     dir_src, dir_tvs, dir_mov = loadConfig()
