@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import win32con, win32file, win32event
-import threading
 import time
 import os
 import renamer
@@ -40,7 +39,7 @@ class Scanner(QThread):
             while True and not self.abort:
                 result = win32event.WaitForSingleObject(change_handle, 500)
                 if result == win32con.WAIT_OBJECT_0:
-                    time.sleep(1)
+                    self.sleep(1)
                     renamer.main(dir_src, dir_tvs, dir_mov)
                     win32file.FindNextChangeNotification(change_handle)
         finally:
