@@ -6,15 +6,21 @@ import time
 import os
 import renamer
 import utils
+from PyQt5.QtCore import QThread
 
 
-class Scanner(threading.Thread):
+class Scanner(QThread):
     def __init__(self, verbose=False):
-        threading.Thread.__init__(self)
+        #threading.Thread.__init__(self)
+        QThread.__init__(self)
         self.abort = False
         self.verbose = verbose
 
+    def __del__(self):
+        self.wait()
+
     def run(self):
+        self.abort = False
         directories = utils.loadConfig()
         dir_src, dir_tvs, dir_mov = os.path.normpath(directories[0]), os.path.normpath(directories[1]), os.path.normpath(directories[2])
         if self.verbose:

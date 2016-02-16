@@ -181,7 +181,7 @@ class Window(QWidget):
             combobox.setCurrentIndex(combobox.findText(directory))
 
     def save(self):
-        if self.scanner.isAlive():
+        if self.scanner.isRunning():
             self.toggle()
         inputDir = self.inputDirComboBox.currentText()
         outputDirTVS = self.outputDirTVSComboBox.currentText()
@@ -230,7 +230,6 @@ class Window(QWidget):
 
     def toggle(self):
         if not self.watching:
-            self.scanner.setDaemon(True)
             self.scanner.start()
             self.busyBar.show()
         else:
@@ -241,9 +240,7 @@ class Window(QWidget):
         self.toggleButton.setText("Stop Watching" if self.watching else "Start Watching")
 
     def stop(self):
-        if self.scanner.isAlive():
-            self.scanner.stop()
-            self.scanner.join()
+        self.scanner.stop()
 
 
 def exithandler():
