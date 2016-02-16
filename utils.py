@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
 import re
+import configparser
 
 
 def loadConfig():
-    with open("config/config.ini") as file:
-        directories = file.read().splitlines()
-    return directories
+    config = configparser.ConfigParser()
+    config.read("config/settings.ini")
+    return config["DIRECTORIES"]["input"], config["DIRECTORIES"]["outputtvs"], config["DIRECTORIES"]["outputmov"]
 
 
 def loadExceptions():

@@ -4,6 +4,7 @@ import sys
 import atexit
 from scanner import Scanner
 import utils
+import configparser
 from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
 from PyQt5.QtCore import QDir, QModelIndex
 from PyQt5.QtWidgets import (QWidget, QAction, QApplication, QComboBox,
@@ -186,8 +187,14 @@ class Window(QWidget):
         inputDir = self.inputDirComboBox.currentText()
         outputDirTVS = self.outputDirTVSComboBox.currentText()
         outputDirMOV = self.outputDirMOVComboBox.currentText()
-        with open("config/config.ini", "w") as file:
-            file.write(inputDir + "\n" + outputDirTVS + "\n" + outputDirMOV)
+        config = configparser.ConfigParser()
+        config.read("config/settings.ini")
+        config["DIRECTORIES"]["input"] = inputDir
+        config["DIRECTORIES"]["outputtvs"] = outputDirTVS
+        config["DIRECTORIES"]["outputmov"] = outputDirMOV
+        with open("config/settings.ini", "w") as file:
+            config.write(file)
+
         exceptions = []
         for i in range(self.model.rowCount()):
             itemOld = self.model.item(i, 0)
