@@ -241,6 +241,7 @@ class Window(QWidget):
 
     def stop(self):
         self.scanner.stop()
+        self.scanner.wait()
 
 
 def exithandler():
