@@ -1,269 +1,218 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
 import sys
+import os
+import time
 import atexit
-from scanner import Scanner
-import utils
+import re
 import configparser
-from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
-from PyQt5.QtCore import QDir, QModelIndex
-from PyQt5.QtWidgets import (QWidget, QAction, QApplication, QComboBox,
-        QGridLayout, QHBoxLayout, QLabel, QMessageBox, QMenu, QPushButton,
-        QSystemTrayIcon, QSizePolicy, QFileDialog, QGroupBox, QTableView, QProgressBar)
+import utils
+from plexapi.server import PlexServer
+from scanner import Scanner
 
+class MainWindow(QtWidgets.QMainWindow):
 
-class Window(QWidget):
-    def __init__(self, verbose=False):
-        super(Window, self).__init__()
+    def __init__(self):
+        super(MainWindow, self).__init__()
 
-        self.verbose = verbose
-
-        # GUI
-        if isSystemTrayAvailable:
-            self.createActions()
-            self.createTrayIcon()
-            self.trayIcon.activated.connect(self.iconActivated)
-
-        self.inputDirLabel = QLabel("Input Directory:")
-        self.outputDirTVSLabel = QLabel("Output Directory (Shows):")
-        self.outputDirMOVLabel = QLabel("Output Directory (Movies):")
-        self.inputDirComboBox = self.createComboBox()
-        self.outputDirTVSComboBox = self.createComboBox()
-        self.outputDirMOVComboBox = self.createComboBox()
-        self.inputDirButton = self.createButton("&Browse", lambda: self.browse(self.inputDirComboBox))
-        self.outputDirTVSButton = self.createButton("&Browse", lambda: self.browse(self.outputDirTVSComboBox))
-        self.outputDirMOVButton = self.createButton("&Browse", lambda: self.browse(self.outputDirMOVComboBox))
-
-        self.sourceGroupBox = QGroupBox("Manage Exceptions")
-        self.model = QStandardItemModel(0, 3)
-        self.model.setHorizontalHeaderLabels(["OLD NAME", "NEW NAME", "MANAGE"])
-        self.list = QTableView()
-        self.list.setModel(self.model)
-        self.list.setAlternatingRowColors(True)
-        self.list.horizontalHeader().setStretchLastSection(True)
-        self.list.resizeRowsToContents()
-        self.list.setColumnWidth(0, 250)
-        self.list.setColumnWidth(1, 250)
-
-        self.insertButton = self.createButton("&Insert", self.insertRow)
-        self.toggleButton = self.createButton("&Start Watching", self.toggle)
-        self.toggleButton.setFixedSize(100, 23)
-        self.saveButton = self.createButton("&Save", self.save)
-        self.refreshButton = self.createButton("&Refresh", self.refresh)
-        self.busyBar = QProgressBar()
-        self.busyBar.setFixedSize(385, 21) # TODO: proper interface scaling
-        self.busyBar.setRange(0, 0)
-        self.busyBar.setToolTip("Watching for new files...")
-        self.busyBar.hide()
-
-        sourceLayout = QGridLayout()
-        sourceLayout.addWidget(self.list)
-        sourceLayout.addWidget(self.insertButton)
-        self.sourceGroupBox.setLayout(sourceLayout)
-
-        # LAYOUT
-        buttonsLayout = QHBoxLayout()
-        buttonsLayout.addStretch()
-        buttonsLayout.addWidget(self.busyBar)
-        buttonsLayout.addWidget(self.toggleButton)
-        buttonsLayout.addWidget(self.saveButton)
-        buttonsLayout.addWidget(self.refreshButton)
-
-        mainLayout = QGridLayout()
-        mainLayout.addWidget(self.inputDirLabel, 0, 0)
-        mainLayout.addWidget(self.inputDirComboBox, 0, 1)
-        mainLayout.addWidget(self.inputDirButton, 0, 2)
-        mainLayout.addWidget(self.outputDirTVSLabel, 1, 0)
-        mainLayout.addWidget(self.outputDirTVSComboBox, 1, 1)
-        mainLayout.addWidget(self.outputDirTVSButton, 1, 2)
-        mainLayout.addWidget(self.outputDirMOVLabel, 2, 0)
-        mainLayout.addWidget(self.outputDirMOVComboBox, 2, 1)
-        mainLayout.addWidget(self.outputDirMOVButton, 2, 2)
-        mainLayout.addWidget(self.sourceGroupBox, 4, 0, 2, 3)
-        mainLayout.addLayout(buttonsLayout, 6, 0, 1, 3)
-        self.setLayout(mainLayout)
-
-        self.setIcon('watchdog.ico')
-        self.setWindowTitle("Watchdog - Finds, renames and moves your media files.")
-        self.setFixedSize(640, 360)
-
-        # Start the Worker
-        self.watching = False
-        self.scanner = Scanner(self.verbose)
-
-    def setVisible(self, visible):
-        if isSystemTrayAvailable:
-            self.minimizeAction.setEnabled(visible)
-            self.restoreAction.setEnabled(self.isMaximized() or not visible)
-        super(Window, self).setVisible(visible)
-
-    def showNormal(self):
-        self.trayIcon.hide()
-        super(Window, self).showNormal()
-
-    def closeEvent(self, event):
-        if isSystemTrayAvailable:
-            self.trayIcon.show()
-            if self.trayIcon.isVisible():
-                self.showMessage("App is still running in your system tray.")
-                self.hide()
-                event.ignore()
-
-    def setIcon(self, filename):
-        icon = QIcon(filename)
+        uic.loadUi("design.ui", self)
+        icon = QtGui.QIcon("watchdog.ico")
         self.setWindowIcon(icon)
-        if isSystemTrayAvailable:
-            self.trayIcon.setIcon(icon)
-            self.trayIcon.setToolTip("Watchdog")
+        self.setWindowTitle("Watchdog")
 
-    def iconActivated(self, reason):
-        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
-            self.showNormal()
+        self.isSystemTrayAvailable = QtWidgets.QSystemTrayIcon.isSystemTrayAvailable()
+        if self.isSystemTrayAvailable:
+            self.tray = QtWidgets.QSystemTrayIcon(self)
+            self.tray.setIcon(icon)
+            self.tray.setToolTip("Watchdog")
+            self.tray_populate()
+            self.tray.activated.connect(self.trayEvent)
+            self.tray.show()
 
-    def showMessage(self, message):
-        if isSystemTrayAvailable and self.trayIcon.isVisible():
-            self.trayIcon.showMessage("Watchdog",
-                    message,
-                    QSystemTrayIcon.MessageIcon(QSystemTrayIcon.Information),
-                    10 * 1000)
-        else:
-            QMessageBox.information(self, "Watchdog", message)
+        self.buttonBrowseInput.clicked.connect(lambda: self.browse_directory(self.comboboxInput))
+        self.buttonBrowseOutputTVS.clicked.connect(lambda: self.browse_directory(self.comboboxOutputTVS))
+        self.buttonBrowseOutputMOV.clicked.connect(lambda: self.browse_directory(self.comboboxOutputMOV))
+        self.buttonToggle.clicked.connect(self.toggle)
+        self.buttonSave.clicked.connect(self.save_settings)
+        self.buttonRefresh.clicked.connect(self.refresh)
+        self.buttonNewException.clicked.connect(lambda: self.add_exception("", ""))
 
-    def createComboBox(self):
-        comboBox = QComboBox()
-        comboBox.setEditable(True)
-        comboBox.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        return comboBox
+        self.progressBar.setRange(0, 0)
+        sp = self.progressBar.sizePolicy()
+        sp.setRetainSizeWhenHidden(True)
+        self.progressBar.setSizePolicy(sp)
+        self.progressBar.setVisible(False)
 
-    def createButton(self, text, member):
-        button = QPushButton(text)
-        button.clicked.connect(member)
-        return button
+        self.load_settings()
 
-    def createActions(self):
-        self.minimizeAction = QAction("Mi&nimize", self, triggered=self.hide)
-        self.restoreAction = QAction("&Restore", self,
-                triggered=self.showNormal)
-        self.toggleAction = QAction("&Toggle", self, triggered=self.toggle)
-        self.quitAction = QAction("&Quit", self,
-                triggered=QApplication.instance().quit)
+        self.watching = False
+        self.scanner = Scanner(True)
+        self.scanner.message.connect(self.add_output)
 
-    def createTrayIcon(self):
-         self.trayIconMenu = QMenu(self)
-         self.trayIconMenu.addAction(self.minimizeAction)
-         self.trayIconMenu.addAction(self.restoreAction)
-         self.trayIconMenu.addAction(self.toggleAction)
-         self.trayIconMenu.addSeparator()
-         self.trayIconMenu.addAction(self.quitAction)
-
-         self.trayIcon = QSystemTrayIcon(self)
-         self.trayIcon.setContextMenu(self.trayIconMenu)
-
-    def insertRow(self):
-        item = QStandardItem('')
-        self.model.appendRow([item, QStandardItem('')])
-        itemindex = self.model.indexFromItem(item).row()
-        self.insertWidget(itemindex, item)
-
-    def deleteRow(self, n):
-        self.model.removeRow(n)
-
-    def insertWidget(self, n, item):
-        node_widget = QPushButton("DELETE")
-        node_widget.clicked.connect(lambda: self.deleteRow(self.model.indexFromItem(item).row()))
-        qindex_widget = self.model.index(n, 2, QModelIndex())
-        self.list.setIndexWidget(qindex_widget, node_widget)
-
-    def browse(self, combobox):
-        directory = QFileDialog.getExistingDirectory(self, "Find Files", QDir.currentPath())
+    def browse_directory(self, combobox):
+        directory = QtWidgets.QFileDialog.getExistingDirectory(self, "Pick a folder")
         if directory:
             if combobox.findText(directory) == -1:
                 combobox.addItem(directory)
             combobox.setCurrentIndex(combobox.findText(directory))
 
-    def save(self):
-        if self.scanner.isRunning():
-            self.toggle()
-        inputDir = self.inputDirComboBox.currentText()
-        outputDirTVS = self.outputDirTVSComboBox.currentText()
-        outputDirMOV = self.outputDirMOVComboBox.currentText()
+    def add_output(self, output):
+        self.listOutput.addItem(output)
+
+    def add_exception(self, old, new):
+        te = self.tableExceptions
+        tr = te.rowCount()
+        te.insertRow(tr)
+        te.setItem(tr, 0, QtWidgets.QTableWidgetItem(old))
+        te.setItem(tr, 1, QtWidgets.QTableWidgetItem(new))
+        tb = QtWidgets.QPushButton("DEL")
+        tb.clicked.connect(lambda: te.removeRow([i for i in range(0, te.rowCount()) if te.cellWidget(i, 2) == tb][0]))
+        te.setCellWidget(tr, 2, tb)
+
+    def load_settings(self):
+        self.add_output("Loading settings...")
+        directories = utils.loadConfig()
+        comboboxes = [self.comboboxInput, self.comboboxOutputTVS, self.comboboxOutputMOV]
+        for i, dir in enumerate(directories):
+            if comboboxes[i].findText(dir) == -1:
+                comboboxes[i].addItem(dir)
+            comboboxes[i].setCurrentIndex(comboboxes[i].findText(dir))
         config = configparser.ConfigParser()
         config.read("config/settings.ini")
-        config["DIRECTORIES"]["input"] = inputDir
-        config["DIRECTORIES"]["outputtvs"] = outputDirTVS
-        config["DIRECTORIES"]["outputmov"] = outputDirMOV
+        self.lineFormatTVS.setText(config["FORMATS"]["formattvs"])
+        self.lineFormatMOV.setText(config["FORMATS"]["formatmov"])
+        mediaserver = config["GENERAL"]["mediaserver"]
+        if self.comboboxMediaServer.findText(mediaserver) == -1:
+            self.comboboxMediaServer.addItem(mediaserver)
+        self.comboboxMediaServer.setCurrentIndex(self.comboboxMediaServer.findText(mediaserver))
+        self.comboboxMediaServer.setEnabled(False)
+        self.checkboxCleanup.setChecked(config.getboolean("GENERAL", "cleanup"))
+        self.checkboxOverwrite.setChecked(config.getboolean("GENERAL", "overwrite"))
+        self.checkboxMinimized.setChecked(config.getboolean("GENERAL", "startmin"))
+        self.checkboxDebug.setChecked(config.getboolean("GENERAL", "debug"))
+        self.add_output("Done.")
+        self.load_exceptions()
+
+    def save_settings(self):
+        if self.watching:
+            self.stop()
+        self.add_output("Saving settings...")
+        config = configparser.ConfigParser()
+        config.read("config/settings.ini")
+        config["DIRECTORIES"]["input"] = self.comboboxInput.currentText()
+        config["DIRECTORIES"]["outputtvs"] = self.comboboxOutputTVS.currentText()
+        config["DIRECTORIES"]["outputmov"] = self.comboboxOutputMOV.currentText()
+        config["FORMATS"]["formattvs"] = self.lineFormatTVS.text()
+        config["FORMATS"]["formatmov"] = self.lineFormatMOV.text()
+        config["GENERAL"]["mediaserver"] = self.comboboxMediaServer.currentText()
+        config["GENERAL"]["cleanup"] = str(self.checkboxCleanup.isChecked())
+        config["GENERAL"]["overwrite"] = str(self.checkboxOverwrite.isChecked())
+        config["GENERAL"]["startmin"] = str(self.checkboxMinimized.isChecked())
+        config["GENERAL"]["debug"] = str(self.checkboxDebug.isChecked())
         with open("config/settings.ini", "w") as file:
             config.write(file)
+        self.add_output("Done.")
+        self.save_exceptions()
 
-        exceptions = []
-        for i in range(self.model.rowCount()):
-            itemOld = self.model.item(i, 0)
-            itemNew = self.model.item(i ,1)
-            exceptions.append(itemOld.text() + ';' + itemNew.text())
+    def load_exceptions(self):
+        self.add_output("Loading exceptions...")
+        with open("config/exceptions.ini", "r") as file:
+            lines = file.read().splitlines()
+        for line in lines:
+            if line.count(';') == 1:
+                exception = re.match(r"(.*);(.*)", line)
+                if exception:
+                    old, new = exception.group(1), exception.group(2)
+                    self.add_exception(old, new)
+                    self.add_output("Added exception '{}' => '{}'.".format(old, new))
+            else:
+                self.add_output("Failed saving exception '{}' => '{}': illegal character!".format(old, new))
+        self.add_output("Done.")
+
+    def save_exceptions(self):
+        self.add_output("Saving exceptions...")
+        te = self.tableExceptions
         with open("config/exceptions.ini", "w") as file:
-            for exception in exceptions:
-                if len(exception) > 1:
-                    file.write(exception.rstrip() + '\n')
-        self.showMessage("Saved configuration.")
-        self.scanner = Scanner(self.verbose)
+            for i in range(0, te.rowCount()):
+                old, new = te.item(i, 0).text(), te.item(i, 1).text()
+                if len(old) > 1 and len(new) > 1:
+                    exception = "{};{}".format(old, new)
+                    if exception.count(';') == 1:
+                        file.writelines("{}\n".format(exception.rstrip()))
+                    else:
+                        self.add_output("Failed saving exception '{}' => '{}': illegal character!".format(old, new))
+        self.add_output("Done.")
 
-    def refresh(self):
-        from plexapi.server import PlexServer
-        plex = PlexServer()
-        plex.library.refresh()
-        print("Refreshing media center...")
+    def tray_populate(self):
+        menu = QtWidgets.QMenu(self)
+        # menu.addAction(QtWidgets.QAction("Minimize", self, triggered=self.hide))
+        # menu.addAction(QtWidgets.QAction("Restore", self, triggered=self.showNormal))
+        menu.addAction(QtWidgets.QAction("Toggle", self, triggered=self.toggle))
+        # menu.addSeparator()
+        menu.addAction(QtWidgets.QAction("Quit", self, triggered=QtWidgets.QApplication.instance().quit))
+        self.tray.setContextMenu(menu)
 
-    def createTable(self):
-        exceptions = utils.loadExceptions()
-        i = 0
-        for k, v in exceptions.items():
-            itemOld = QStandardItem(k)
-            itemNew = QStandardItem(v)
-            self.model.appendRow([itemOld, itemNew])
-            self.insertWidget(i, itemOld)
-            i += 1
-
-    def load(self):
-        directories = utils.loadConfig()
-        comboboxes = [self.inputDirComboBox, self.outputDirTVSComboBox, self.outputDirMOVComboBox]
-        if len(directories) == 3:
-            for i, directory in enumerate(directories):
-                if comboboxes[i].findText(directory) == -1:
-                    comboboxes[i].addItem(directory)
-                comboboxes[i].setCurrentIndex(comboboxes[i].findText(directory))
+    def show_message(self, message):
+        self.add_output(message)
+        if self.isSystemTrayAvailable and self.tray.isVisible():
+            self.tray.showMessage("Watchdog", message, QtWidgets.QSystemTrayIcon.MessageIcon(QtWidgets.QSystemTrayIcon.Information), 10 * 1000)
         else:
-            pass
-        self.createTable()
+            QtWidgets.QMessageBox.information(self, "Watchdog", message)
 
-    def toggle(self):
-        if not self.watching:
-            self.scanner.start()
-            self.busyBar.show()
-        else:
-            self.stop()
-            self.scanner = Scanner(self.verbose)
-            self.busyBar.hide()
-        self.watching = not self.watching
-        self.toggleButton.setText("Stop Watching" if self.watching else "Start Watching")
+    def start(self):
+        self.scanner.start()
+        self.progressBar.setVisible(True)
+        self.buttonToggle.setText("Stop")
+        self.watching = True
+        self.buttonSave.setEnabled(False)
+        self.buttonRefresh.setEnabled(False)
 
     def stop(self):
         self.scanner.stop()
         self.scanner.wait()
+        self.scanner = Scanner(True)
+        self.scanner.message.connect(self.add_output)
+        self.progressBar.setVisible(False)
+        self.buttonToggle.setText("Start")
+        self.watching = False
+        self.buttonSave.setEnabled(True)
+        self.buttonRefresh.setEnabled(True)
+
+    def toggle(self):
+        if self.watching:
+            self.stop()
+        else:
+            self.start()
+
+    def refresh(self):
+        plex = PlexServer()
+        plex.library.refresh()
+        self.add_output("Refreshed Plex.")
 
 
-def exithandler():
+    def trayEvent(self, event):
+        if event in [QtWidgets.QSystemTrayIcon.Trigger, QtWidgets.QSystemTrayIcon.DoubleClick]:
+            self.showNormal()
+
+    def closeEvent(self, event):
+        if self.isSystemTrayAvailable:
+            self.tray.show()
+            if self.tray.isVisible():
+                self.hide()
+                event.ignore()
+
+
+def onexit():
     window.stop()
 
-
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    isSystemTrayAvailable = QSystemTrayIcon.isSystemTrayAvailable()
-    app.setQuitOnLastWindowClosed(not isSystemTrayAvailable)
-
-    window = Window(True)
-    window.show()
-    window.load()
-
-    atexit.register(exithandler)
-    sys.exit(app.exec_())
+    app = QtWidgets.QApplication(sys.argv)
+    app.setStyle("fusion")
+    window = MainWindow()
+    config = configparser.ConfigParser()
+    config.read("config/settings.ini")
+    if not config.getboolean("GENERAL", "startmin"):
+        window.show()
+    atexit.register(onexit)
+    sys.exit(app.exec())

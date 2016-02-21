@@ -1,14 +1,17 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import win32con, win32file, win32event
 import time
 import os
 import renamer
 import utils
-from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class Scanner(QThread):
+
+    message = pyqtSignal(str)
+
     def __init__(self, verbose=False):
         #threading.Thread.__init__(self)
         QThread.__init__(self)
@@ -24,6 +27,7 @@ class Scanner(QThread):
         dir_src, dir_tvs, dir_mov = os.path.normpath(directories[0]), os.path.normpath(directories[1]), os.path.normpath(directories[2])
         if self.verbose:
             print("Started watching '{}' at '{}'.".format(str(dir_src), time.asctime()))
+            self.message.emit("Started watching '{}' at '{}'.".format(str(dir_src), time.asctime()))
 
         change_handle = win32file.FindFirstChangeNotification(
           dir_src,
@@ -46,6 +50,7 @@ class Scanner(QThread):
             win32file.FindCloseChangeNotification(change_handle)
             if self.verbose:
                 print("Stopped watching '{}' at '{}'.".format(str(dir_src), time.asctime()))
+                self.message.emit("Stopped watching '{}' at '{}'.".format(str(dir_src), time.asctime()))
 
     def stop(self):
         self.abort = True
