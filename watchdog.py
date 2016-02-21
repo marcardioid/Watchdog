@@ -82,12 +82,14 @@ class MainWindow(QtWidgets.QMainWindow):
         config = configparser.ConfigParser()
         config.read("config/settings.ini")
         self.lineFormatTVS.setText(config["FORMATS"]["formattvs"])
+        self.lineFormatTVS.setEnabled(False) # TODO: ENABLE FUNCTIONALITY
         self.lineFormatMOV.setText(config["FORMATS"]["formatmov"])
+        self.lineFormatMOV.setEnabled(False) # TODO: ENABLE FUNCTIONALITY
         mediaserver = config["GENERAL"]["mediaserver"]
         if self.comboboxMediaServer.findText(mediaserver) == -1:
             self.comboboxMediaServer.addItem(mediaserver)
         self.comboboxMediaServer.setCurrentIndex(self.comboboxMediaServer.findText(mediaserver))
-        self.comboboxMediaServer.setEnabled(False)
+        self.comboboxMediaServer.setEnabled(False) # TODO: ENABLE FUNCTIONALITY
         self.checkboxCleanup.setChecked(config.getboolean("GENERAL", "cleanup"))
         self.checkboxOverwrite.setChecked(config.getboolean("GENERAL", "overwrite"))
         self.checkboxMinimized.setChecked(config.getboolean("GENERAL", "startmin"))
