@@ -67,6 +67,7 @@ class MainWindow(QtWidgets.QMainWindow):
         te.setItem(tr, 0, QtWidgets.QTableWidgetItem(old))
         te.setItem(tr, 1, QtWidgets.QTableWidgetItem(new))
         tb = QtWidgets.QPushButton("DEL")
+        tb.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         tb.clicked.connect(lambda: te.removeRow([i for i in range(0, te.rowCount()) if te.cellWidget(i, 2) == tb][0]))
         te.setCellWidget(tr, 2, tb)
 

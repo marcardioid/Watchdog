@@ -261,6 +261,9 @@
         </item>
         <item>
          <widget class="QPushButton" name="buttonNewException">
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
           <property name="text">
            <string>New Exception</string>
           </property>
