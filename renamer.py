@@ -210,7 +210,8 @@ def main(dir_src, dir_tvs, dir_mov):
     if cleanup and not debug:
         garbagecollect()
     if plex:
-        plex.library.refresh()
+        # plex.library.refresh()
+        pass
 
 
 if __name__ == "__main__":
